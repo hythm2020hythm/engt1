@@ -1,0 +1,564 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #score-counter {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px;
+            background-color: #333;
+            border-bottom-right-radius: 10px;
+            color: white;
+            z-index: 999;
+        }
+
+        #quiz-container {
+            max-width: 600px;
+            margin: auto;
+            padding: 60px 20px 20px; /* تم تعديل ال padding ليضمن عدم تغطية الصورة */
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            position: relative; /* تمت إضافة position: relative; للسماح لـ #score-counter بالتحكم فيه */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: white;
+            background-color: #2196F3;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0c0c0c;
+        }
+
+        #timer {
+            margin-bottom: 10px;
+        }
+
+        #result-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-text {
+            margin-bottom: 10px;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        /* CSS for displaying images to fit the screen */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="score-counter">Score: <span id="score">0</span></div>
+
+    <div id="quiz-container">
+        <img id="question-image" src="" alt="Question Image">
+        <div id="choices"></div>
+        <button onclick="checkAnswer()">Submit Answer</button>
+        <p id="timer"></p>
+    </div>
+
+    <div id="result-container">
+        <h2>Quiz Result</h2>
+        <p class="result-text" id="result"></p>
+        <div id="correct-answers"></div>
+        <button id="retryBtn" style="display: none;" onclick="retryQuiz()">Retry Quiz</button>
+    </div>
+
+    <script>
+        var currentQuestion = 0;
+        var score = 0;
+        var timeLeft = 1800; // تحديد عدد الثواني
+        var timerInterval;
+
+        var quizData = [
+
+
+        
+          
+        {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/7213e6f7-9e51-4fd6-8584-6ef5b4b4f7b7",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "B"
+           },  
+           
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/2a161e9e-e9e8-42ca-a613-36f5db31ecec",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "C"
+           },  
+           
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/2464d166-dbf8-4a4a-9e7d-74f7fa4bd405",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "D"
+           },  
+           
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/83e7134b-0981-48ed-848a-5cdadd2c60a3",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "D"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/f6170a78-a4a4-4bcf-8364-7a43d82d54ef",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "C"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/dd19c52e-f478-43bf-89e5-97bc9c5f69eb",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "B"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/1e76e110-c2ee-422e-b05b-6f11d9523353",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "B"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/34222db3-626d-41cb-862a-b2ed26ea1e7f",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "D"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/9548392f-13f4-4273-b5d4-d295b1cb747b",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "C"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/827e5501-d556-40e0-83d7-4d5797e0a29f",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "C"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/3092adba-2d4a-488b-890e-4c3a73ec7834",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "C"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/f4a1fe06-05ba-4b50-83a6-56272c87d7ac",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "D"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/0c9ae979-33a3-4edd-b94e-09c0094cf183",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "D"
+           },
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/f48b441c-9326-4605-bc48-4744b692853a",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "C"
+           } ,
+                 
+          
+        {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/c00ea409-0abe-4dfd-92bf-6eedb7ec512f",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/d94d352b-c9b8-4116-89a5-43c8f9af505d",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "A"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/2b37875c-c494-47ec-b60c-5025c9332609",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/c52560c3-8718-4347-b001-31742481aec9",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "A"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/d1b161b5-7547-4168-8b8e-2133bc01d0d3",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/aacb7250-b845-41ee-bc1b-e2197bc650ed",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/5de1800d-f622-4868-b5de-642b2e108668",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "A"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/96b9c100-c327-4763-945d-f0728c68d299",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/0e27cc11-79d8-4827-aaa7-be55c7b4b171",
+                "choices": ["A", "B","C" ],
+                "correctAnswer": "B"
+            },
+          
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/878d7f53-80e2-48b6-bee1-f02378182020",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+      {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/0af085a4-8618-4725-9840-bd74cc268f65",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+            
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/a4d169a6-e16b-484f-870a-df50f9e2dc79",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "A"
+            },
+            
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/fd84d021-13a8-4963-8b4a-250f79783aa5",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "A"
+            },
+            
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/8d1dd8d3-5c52-437e-b09c-799429d68763",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+            
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/0a835f0e-9f53-4af7-8c00-1fc5e0a765e8",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "A"
+            },
+            
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/6d662bfb-cc5d-4697-962d-a1248967778b",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "A"
+            },
+            
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/b5581896-ffda-49c5-a5bc-74b5aaa6d432",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "C"
+            },
+            
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/4aa9c16b-a9d3-4f62-b13b-80cf4918b9eb",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "C"
+            },
+            
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/b6577606-27a0-4588-8061-8a2bdf01599d",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "B"
+            },
+            
+           
+  
+           
+            {
+                "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/c91a9e05-86d6-4b97-a94f-066980ea10db",
+                "choices": ["A", "B","C","D"],
+                "correctAnswer": "A"
+            },  
+           
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/75a69d46-ceae-479c-b17d-c74c12bcc748",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "A"
+           },  
+           
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/0e9f480a-4fac-4f87-84b7-bb435492ebdc",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "A"
+           },  
+           
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/264ab81f-6dd9-4ccd-b35c-2e9a70d54895",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "B"
+           },  
+           
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/1c0b7e77-0f0c-4c10-a47e-bde302a06102",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "D"
+           },  
+           
+           {
+               "imageSrc": "https://lists.office.com/Images/9188040d-6c67-4c5b-b112-36a304b66dad/00000000-0000-0000-0006-bffd20b2d784/T6WPMOMCJUD8H6V3SWL9VFPQDL/1dd98527-366b-4597-9eed-9d1f189ae6c6",
+               "choices": ["A", "B","C","D"],
+               "correctAnswer": "D"
+           },
+                    
+        {
+"question": "Productive skills are ",
+"choices": ["Listening and writing.", "Speaking and listening", "Reading and speaking.", "Speaking and writing"],
+"correctAnswer": "Speaking and writing"
+},
+{
+"question": "Receptive skills are ",
+"choices": ["Listening and writing.", "Reading and listening", "Reading and speaking.", "Speaking and writing."],
+"correctAnswer": "Reading and listening"
+},
+{
+"question": "Passive Skills are ",
+"choices": ["Listening and writing.", "Reading and listening", "Reading and speaking.", "Speaking and writing."],
+"correctAnswer": "Reading and listening"
+},
+{
+"question": "  is the process of using symbols (letters of the alphabet  punctuation and spaces) to communicate thoughts and ideas in a readable form.",
+"choices": ["Listening.", "Reading.", "Speaking.", "Writing"],
+"correctAnswer": "Writing"
+},
+{
+"question": "Stages of writing Processes are  ",
+"choices": ["Pre-writing - Planning - Brainstorming.", "Drafting - Free writing – Revising.", "Editing - Proofreading –Publishing.", "All of the above."],
+"correctAnswer": "All of the above."
+},
+          
+        {
+"question": " Is defined as  any form of teaching and learning in which the teacher and learner are not in the same place at the same time ",
+"choices": ["Asynchronous Learning.", "Distance Learning", "Blended learning.", "Synchronous Learning."],
+"correctAnswer": "Distance Learning"
+},
+{
+"question": "..... is an education program that combines online digital media with traditional classroom methods.",
+"choices": ["Asynchronous Learning.",  "Blended Learning", "Blended learning", "Synchronous Learning."],
+"correctAnswer": "Blended Learning"
+},
+{
+"question": "..... any instructional device that can be seen, but not heard.",
+"choices": ["Visual aids.", "Audio-Visual aids.", "Audio aids.", "Activity aids."],
+"correctAnswer": "Visual aids."
+},
+{
+"question": ".... Is the first and the most important communication skill.",
+"choices": ["Listening.", "Reading.", "Speaking.", "Writing."],
+"correctAnswer": "Listening."
+},
+{
+"question": "Share your writing by",
+"choices": ["Editing.", "Publishing.", "Revising.", "Drafting"],
+"correctAnswer": "Publishing."
+},
+          
+        {
+"question": "Reading to find a specific piece of information",
+"choices": ["Skimming.", "Scanning.", "Silent Reading.", "Extensive Reading."],
+"correctAnswer": "Scanning."
+},
+          
+          
+
+          
+
+        ];
+
+        // قم بترتيب الأسئلة بشكل عشوائي
+        shuffleArray(quizData);
+
+        function shuffleArray(array) {
+            for (var i = array.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+            }
+            return array;
+        }
+
+        function loadQuestion() {
+            var currentQuiz = quizData[currentQuestion];
+
+            var questionImageElement = document.getElementById('question-image');
+            var choicesElement = document.getElementById('choices');
+
+            if (currentQuiz.imageSrc) {
+                questionImageElement.src = currentQuiz.imageSrc; // تعيين مصدر الصورة
+                questionImageElement.style.display = 'block'; // عرض الصورة
+            } else {
+                questionImageElement.style.display = 'none'; // إخفاء الصورة إذا لم تكن متاحة
+            }
+
+            choicesElement.innerHTML = '';
+
+            // عرض السؤال كنص عادي إذا لم يكن هناك صورة
+            if (!currentQuiz.imageSrc) {
+                choicesElement.innerHTML += '<p>' + currentQuiz.question + '</p>';
+            }
+
+            for (var i = 0; i < currentQuiz.choices.length; i++) {
+                var choice = currentQuiz.choices[i];
+                choicesElement.innerHTML += '<label><input type="radio" name="choice" value="' + choice + '"> ' + choice + '</label>';
+            }
+
+            startTimer(); // بدء الموقت عند تحميل كل سؤال
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(function () {
+                document.getElementById('timer').innerHTML = 'Time Left: ' + timeLeft + 's';
+
+                if (timeLeft === 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up!'); // عرض رسالة انتهاء الوقت
+                    showResult(); // عرض النتيجة النهائية عند انتهاء الوقت
+                } else {
+                    timeLeft--;
+                }
+            }, 1000);
+        }
+
+        function checkAnswer() {
+            var selectedOption = document.querySelector('input[name="choice"]:checked');
+            if (!selectedOption) {
+                alert('Please select an answer.');
+                return;
+            }
+
+            var userAnswer = selectedOption.value;
+            var currentQuiz = quizData[currentQuestion];
+
+            var choicesLabels = document.querySelectorAll('label');
+
+            for (var i = 0; i < choicesLabels.length; i++) {
+                if (currentQuiz.correctAnswer === currentQuiz.choices[i]) {
+                    choicesLabels[i].classList.add('correct');
+                } else {
+                    choicesLabels[i].classList.add('incorrect');
+                }
+            }
+
+            if (userAnswer === currentQuiz.correctAnswer) {
+                score++;
+                document.getElementById('score').textContent = score;
+            }
+
+            clearInterval(timerInterval); // قبل التحقق من الإجابة، قم بإيقاف الموقت
+
+            currentQuestion++;
+
+            if (currentQuestion < quizData.length) {
+                setTimeout(function () {
+                    loadQuestion();
+                    resetColors();
+                }, 3000);
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            var resultElement = document.getElementById('result');
+            var correctAnswersElement = document.getElementById('correct-answers');
+
+            resultElement.innerHTML = 'Your Score: ' + score + ' out of ' + quizData.length;
+
+            correctAnswersElement.innerHTML = '<h3>Correct Answers:</h3>';
+            for (var i = 0; i < quizData.length; i++) {
+                var q = quizData[i];
+                var imgSrc = q.imageSrc;
+                var imgElement = '<img src="' + imgSrc + '" alt="Question Image">';
+                correctAnswersElement.innerHTML += imgElement + '<strong>Q: ' + q.question + '</strong><br>A: ' + q.correctAnswer + '<br>';
+            }
+
+            document.getElementById('result-container').style.display = 'block';
+            document.getElementById('retryBtn').style.display = 'block';
+        }
+
+        function resetColors() {
+            var choicesLabels = document.querySelectorAll('label');
+            for (var i = 0; i < choicesLabels.length; i++) {
+                choicesLabels[i].classList.remove('correct', 'incorrect'); // إزالة الأنماط المضافة سابقًا
+            }
+        }
+
+        function retryQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            timeLeft = 1800; // إعادة تعيين الوقت للقيمة الأصلية
+
+            // قم بترتيب الأسئلة بشكل عشوائي عند إعادة المحاولة
+            shuffleArray(quizData);
+
+            document.getElementById('score').textContent = score; // تحديث قيمة العداد إلى الصفر
+            loadQuestion();
+            resetColors();
+
+            document.getElementById('result-container').style.display = 'none';
+            document.getElementById('retryBtn').style.display = 'none';
+        }
+
+        loadQuestion();
+    </script>
+
+</body>
+
+</html>
